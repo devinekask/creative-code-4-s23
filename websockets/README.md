@@ -262,7 +262,7 @@ The server needs to forward the message from a client to all connected clients. 
 
 ![schema showing message sent to server get broadcasted back](images/messages-client-server.png)
 
-There's an easy way to do this in socket.io: using `io.sockets.emit()` you can broadcast a message to everyone. (Check out the [socket.io emit cheat sheet for other options](https://socket.io/docs/emit-cheatsheet/)) Use the same event type as a first parameter, and pass in the incoming message object:
+There's an easy way to do this in socket.io: using `io.sockets.emit()` you can broadcast a message to everyone. (Check out the [socket.io emit cheat sheet for other options](https://socket.io/docs/v4/emit-cheatsheet/)) Use the same event type as a first parameter, and pass in the incoming message object:
 
 ```javascript
 socket.on(`message`, message => {
