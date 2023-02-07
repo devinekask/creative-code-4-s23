@@ -576,7 +576,7 @@ Loop through these socket ids, and remove the corresponding div block from the D
 
 ```javascript
 disconnectedSocketIds.forEach(clientId => {
-  const $cursor = document.querySelector(`#${clientId}`);
+  const $cursor = document.querySelector(`#cursor-${clientId}`);
   if($cursor) {
     $cursor.parentNode.removeChild($cursor);
   }
