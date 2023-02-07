@@ -199,8 +199,8 @@ Back to our HTML. Create a basic form, and load the socket.io library:
 Create variables to hold the form, input and the socket connections, and provide an `init()` function (empty for now):
 
 ```javascript
-const msgForm = document.querySelector(`#msgForm`);
-const msgInput = document.querySelector(`#msgInput`);
+const $msgForm = document.getElementById('msgForm');
+const $msgInput = document.getElementById('msgInput');
 
 let socket; // will be assigned a value later
 
@@ -241,7 +241,7 @@ io.on('connection', socket => {
 Next up, we'll use the form to send a message to the server. Listen for the "submit" event on the form:
 
 ```javascript
-msgForm.addEventListener(`submit`, e => handleSubmit(e));
+$msgForm.addEventListener(`submit`, e => handleSubmit(e));
 ```
 
 and in the submit handler, you'll send a message with the socket. If everything works as it should, you should see your messages appear in the server console!
@@ -250,9 +250,9 @@ and in the submit handler, you'll send a message with the socket. If everything 
 const handleSubmit = e => {
   e.preventDefault();
   if (socket.connected) {
-    socket.emit(`message`, msgInput.value);
+    socket.emit(`message`, $msgInput.value);
   }
-  msgInput.value = ``;
+  $msgInput.value = ``;
 };
 ```
 
