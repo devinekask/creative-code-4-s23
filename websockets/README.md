@@ -378,7 +378,7 @@ Finally, make sure to delete the client data from the lookup object, when the so
 ```javascript
 socket.on('disconnect', () => {
   delete clients[socket.id];
-};
+});
 ```
 
 ### Finalizing the client app
