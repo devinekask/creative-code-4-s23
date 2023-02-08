@@ -312,7 +312,7 @@ Get a reference to this form and add a listener for the submit event:
 ```javascript
 // add this to the top
 const $nameForm = document.getElementById('nameForm');
-
+const $nameInput = document.getElementById('nameInput');
 // ...
 
 // listen for the submit event in the init function
