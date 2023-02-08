@@ -457,7 +457,7 @@ Finally, we'll broadcast the global users object to all connected clients,with a
 server.listen(port, () => {
  console.log(`App listening on port ${port}!`);
  setInterval(() => {
-    io.sockets.emit('update', users);
+    io.sockets.emit('update', clients);
   }, 100);
 });
 ```
