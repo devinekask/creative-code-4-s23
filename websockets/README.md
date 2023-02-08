@@ -244,7 +244,7 @@ Next up, we'll use the form to send a message to the server. Listen for the "sub
 msgForm.addEventListener(`submit`, e => handleSubmit(e));
 ```
 
-and in the submit handler, you'll send a message with the socket. If everything works as it should, you should see your messages appear in the server console!
+and in the submit handler, you'll send a message with the socket. If everything works as it should, you should see your messages appear in the server console! Don't forget to restart your server for changes to take effect.
 
 ```javascript
 const handleSubmit = e => {
