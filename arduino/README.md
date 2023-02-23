@@ -42,7 +42,7 @@ void loop() {
 ```
 
 2.  Connect your Arduino Board on a free USB port.
-3.  Make sure that `Tools > Board > Arduino Micro` is selected in the menu.
+3.  Make sure that `Tools > Board > Arduino AVR Boards > Arduino Micro` is selected in the menu.
 4.  Make sure that a port with an Arduino is selected in `Tools > Port`. The usb port with the Arduino should mention something like "Arduino" at the end.
 5.  Click on the right-pointing arrow button to upload the Sketch to the board.
 
@@ -123,7 +123,7 @@ Have a look at the difference between [write()](https://www.arduino.cc/reference
 
 ### Web Serial API
 
-A great place to start is [this article on the Web Serial API](https://web.dev/i18n/en/serial/)
+A great place to start is [the MDN page on the Web Serial API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API)
 
 Some general advice:
 
