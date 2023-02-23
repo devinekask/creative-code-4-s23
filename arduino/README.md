@@ -106,7 +106,7 @@ Our Arduino Pro Micro board has the capability of identifying itself as a keyboa
 Let's play [the chrome dino game](chrome://dino) using your Arduino. You can play this game by pressing the spacebar on your keyboard. We'll build our own keyboard with Arduino!
 
 - [Hook up a pushbutton to your Arduino](https://www.arduino.cc/en/Tutorial/BuiltInExamples/Button)
-- Take a look at File > Examples > USB > KeyboardAndMouseControl. Figure out what you need to put in the pushbutton code to send out a spacebar key code when pressing the button.
+- Take a look at `File > Examples > 09. USB > KeyboardAndMouseControl`. Figure out what you need to put in the pushbutton code to send out a spacebar key code when pressing the button.
 
 ## Serial Communication
 
@@ -116,10 +116,42 @@ To communicate between a computer (webpage) and an Arduino we can use [Serial co
 
 There are a [lot of examples on the Arduino website](https://docs.arduino.cc/built-in-examples) that are using serial communication in some way or another.
 
-Look for the Serial monitor in the Arduino IDE and run [this example](https://docs.arduino.cc/built-in-examples/communication/ASCIITable) Can you see the ASCII table?
+Look for the Serial monitor in the Arduino IDE, open and Run `File > Examples > 04. Communication > ASCIITable` Can you see the ASCII table?
 
-One important thing to be aware of, is the type of communication. This can be binary or text based. If you only need to send a couple of values, binary (the default) can be sufficient. When you need to send a lot of values and/or commands, it might be worth it to use text based communication and come up with some kind of protocol.
-Have a look at the difference between [write()](https://www.arduino.cc/reference/en/language/functions/communication/serial/write/) and [print()](https://www.arduino.cc/reference/en/language/functions/communication/serial/print/)
+### Control RGB led through Serial
+
+Let's try sending instructions to the Arduino using the Serial port.
+
+Create the following circuit, using an RGB Common Cathode LED:
+
+- red anode: digital pin 3 through 220 ohm resistor
+- green anode: digital pin 5 through 220 ohm resistor
+- blue anode: digital pin 6 through 220 ohm resistor
+- cathode: GND
+
+![Arduino circuit for common cathode](images/rgb-common-cathode_bb.png)
+
+The goal is to control each individual color channel value through the Serial port.
+
+Open `File > Examples > 04. Communication > ReadASCIIString` and explore the code. As we use a common cathode LED, we need to make one tweak to the source code (which is indicated in the source code):
+
+Change
+
+```diff
+- red = 255 - constrain(red, 0, 255);
+- green = 255 - constrain(green, 0, 255);
+- blue = 255 - constrain(blue, 0, 255);
+
++ red = constrain(red, 0, 255);
++ green = constrain(green, 0, 255);
++ blue = constrain(blue, 0, 255);
+```
+
+Upload the sketch and open the Serial monitor. You should be able to pass 3 numbers between [0-255], separated by a comma to control the 3 color channels:
+
+![Serial input field](images/rgb-serial.png)
+
+When building more complex circuits and interactions, you'll need to construct a more complex protocol, covering different scenarios.
 
 ### Web Serial API
 
