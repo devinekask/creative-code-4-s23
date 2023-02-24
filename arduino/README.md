@@ -192,15 +192,109 @@ Take a look at [the arduinojson docs](https://arduinojson.org/v6/doc/) on how to
 
 ### Web Serial API
 
-A great place to start is [the MDN page on the Web Serial API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API)
+Using the Web Serial API, you can access Serial devices from JavaScript.
 
-Some general advice:
+We will use our previous Arduino sketch **ArduinoJSONRGBLed** for this first experiment.
 
-- The Web Serial API is not yet supported by all browsers. So don't forget to check this first.
-- The method `Serial.requestPort()` must be called on a user interaction.
-- There can be only one serial connection at a time. Remember this when you're trying to upload a new sketch while a browser is already connected to the serial port. Or when the Serial monitor is open...
+A great place to start is [the MDN page on the Web Serial API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API). Also [take a look at this step-by-step guide](https://developer.chrome.com/articles/serial/) for extra pointers in the right direction.
 
-To get you started, you can use the lib provided here [https://github.com/devinekask/Arduino-serial](https://github.com/devinekask/Arduino-serial) Be aware this is only a starter, you'll probably need to make some adjustments to get everything working as expected.
+As mentioned in the docs, you can only use Web Serial within a secure browser context (aka: https). So, first of all, set up a nodejs project with express, which launches an https server - [See the WebRTC chapter for that](../webrtc/)
+
+Next up, [follow the step-by-step article on the chrome website](https://developer.chrome.com/articles/serial/).
+
+Create an index.html file in your public folder, and setup some initial elements and code.
+
+```html
+<body>
+  <div id="app">
+    <div id="not-supported">
+      Web Serial is not supported in this browser.
+    </div>
+    <div id="supported">
+      <button>Connect</button>
+    </div>
+  </div>
+  <script type="module">
+
+    const $notSupported = document.getElementById("not-supported");
+    const $supported = document.getElementById("supported");
+
+    const init = async () => {
+      console.log("hello world");
+    };
+
+    init();
+
+  </script>
+</body>
+```
+
+The first thing to do is to check whether the Web Serial API is supported in the current browser (at time of writing, only Chrome, Edge and Opera supported this API). To do that, check whether serial is in navigator.
+
+```javascript
+const hasWebSerial = "serial" in navigator;
+```
+
+Use that boolean to toggle the visibility of our two support-divs:
+
+```javascript
+$notSupported.style.display = hasWebSerial ? "none" : "block";
+$supported.style.display = hasWebSerial ? "block" : "none";
+```
+
+You can add an early return in your init() function when web serial is not supported:
+
+```javascript
+const init = async () => {
+  if (!hasWebSerial) return;
+};
+```
+
+The method `Serial.requestPort()` must be called on a user interaction. This is why we have a button on our page.
+
+Add a click event listener to the connect button, and hook up the following event handler:
+
+```javascript
+const handleClickConnect = async () => {
+  const port = await navigator.serial.requestPort();
+  console.log(port);
+  const info = port.getInfo();
+  console.log(info);
+}
+```
+
+Test the button: you should see a browser dialog askint to select a port, after selecting the port, you should see some general information.
+
+> There can be only one serial connection at a time. Remember this when you're trying to upload a new sketch while a browser is already connected to the serial port or when the Serial monitor is open in the Arduino IDE...
+
+Once we have a port, we can setup our serial connection, using the same baudRate we specified in our Arduino sketch:
+
+```javascript
+await port.open({ baudRate: 9600 });
+```
+
+A serial port sends `Uint8Array` objects over the wire. To convert our JSON strings to these arrays, we'll use an additional TextEncoder:
+
+```javascript
+const textEncoder = new TextEncoderStream();
+const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
+const writer = textEncoder.writable.getWriter();
+```
+
+We can then use this write object, to send the serial strings. For example, let's send a random color json every second:
+
+```javascript
+setInterval(async () => {
+  await writer.write(JSON.stringify({
+    r: Math.floor(Math.random()*255),
+    g: Math.floor(Math.random()*255),
+    b: Math.floor(Math.random()*255),
+  }));
+  await writer.write("\n");
+}, 1000);
+```
+
+**note the additional line break `\n` - do you know why we are adding this? Hint: take a look at our Arduino sketch...**
 
 ## Components to test
 
