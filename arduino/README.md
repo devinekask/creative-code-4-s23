@@ -151,7 +151,44 @@ Upload the sketch and open the Serial monitor. You should be able to pass 3 numb
 
 ![Serial input field](images/rgb-serial.png)
 
-When building more complex circuits and interactions, you'll need to construct a more complex protocol, covering different scenarios.
+### Arduino & JSON
+
+When building more complex circuits and interactions, you might run into limitations of just sending comma separated numbers...
+
+Let's add JSON parsing functionality to our Arduino sketch, with [the ArduinoJSON library](https://arduinojson.org).
+
+Save the previous ReadASCIIString as a different sketch with the name `ArduinoJSONRGBLed`.
+
+Open the Library Manager in your Arduino IDE, and search for ArduinoJson:
+
+![library manager with arduinojson search string](images/arduinojson-library.png)
+
+Click **install** and wait for the installation to finish.
+
+Next up, in the menu bar, click on `Sketch > Include Library > Arduino Json` to add the necessary header files to your Arduino sketch.
+
+This should add the following two lines at the top of your sketch:
+
+```c
+#include <ArduinoJson.h>
+#include <ArduinoJson.hpp>
+```
+
+Replace the `loop()` function with the following content, which just reads a full serial string:
+
+```c
+void loop() {
+  // if there's any serial available, read it:
+  if (Serial.available() > 0) {
+    String s = Serial.readStringUntil('\n');
+    Serial.print("received: ");
+    Serial.println(s);
+    // todo: parse here
+  }
+}
+```
+
+Take a look at [the arduinojson docs](https://arduinojson.org/v6/doc/) on how to implement deserialization, and see if you can get it working so that sending json strings such as `{"r": 255, "g": 255, "b": 0}` works to control the LED.
 
 ### Web Serial API
 
