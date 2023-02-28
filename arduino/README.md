@@ -443,6 +443,119 @@ If you have multiple serial devices connected to a web page, chance exists that 
 - Keep track of the "Arduino" ports, by using the `usbProductId` and `usbVendorId` properties.
 - Change the app, and try controlling the RGB color using a color picker or sliders. You will probably need to move the port, writableStreamClosed and writer to the global scope.
 
+## Reading sensor values over web serial
+
+Let's try sending sensor values from our Arduino to our web page. We'll use the joystick from our Arduino Kit, which is a combination of 2 potentiometers and a push button.
+
+Hook up the joystick to your analog ports A0 and A1. Double check the labels on your joystick breakout board, they might be different from the ones in the image below.
+
+![joystick](./images/joystick_bb.png)
+
+Setup a basic arduino sketch, which uses the ArduinoJson library to send the sensor values as JSON over the wire (note the extra `Serial.println()`):
+
+```c++
+#include <ArduinoJson.h>
+#include <ArduinoJson.hpp>
+
+void setup() {
+  Serial.begin(9600);
+  while (!Serial) continue;
+}
+
+void loop() {
+  int xValue = analogRead(A0);
+  int yValue = analogRead(A1);
+
+  DynamicJsonDocument doc(1024);
+
+  doc["sensor"] = "joystick";
+  doc["data"][0] = xValue;
+  doc["data"][1] = yValue;
+
+  serializeJson(doc, Serial);
+  Serial.println();
+  delay(100);
+}
+```
+
+Test the sketch, and check if the values are logged correctly. Make sure to close the serial monitor afterwards, otherwise your serial communciation will not work in the browser.
+
+On [web serial mdn page](https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API#reading_data_from_a_port) there's a code snippet which deals with reading values from the serial port. We can use this as a starting point for our app.
+
+Create a copy of the previous exercise, get rid of the text encoder and writer, and replace it with the code snippet from the MDN page (add a log statement to log the value);
+
+```javascript
+while (port.readable) {
+  const reader = port.readable.getReader();
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) {
+        // |reader| has been canceled.
+        break;
+      }
+      // Do something with |value|...
+      console.log(value);
+    }
+  } catch (error) {
+    // Handle |error|...
+  } finally {
+    reader.releaseLock();
+  }
+}
+```
+
+You should see a bunch of `Uint8Array` values logged in the console. We can use the `TextDecoder` to convert these values to a string. Setup the reader as follows (instead of setting it equal to `port.readable.getReader();`)
+
+```javascript
+const decoder = new TextDecoderStream();
+const readableStreamClosed = port.readable.pipeTo(decoder.writable);
+const reader = decoder.readable.getReader();
+```
+
+This now logs the values as strings. If you pay close attention, you'll notice that it doesn't take the line breaks into account: it seems to read a random places in the string...
+
+We will need to "transform" the stream in order to be able to use it in our JavaScript code. We can use [the `TransformStream`](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API/Concepts) for this to split the incoming string into lines.
+
+```javascript
+const lineBreakTransformer = new TransformStream({
+  transform(chunk, controller) {
+    const text = chunk;
+    const lines = text.split("\n");
+    lines[0] = (this.remainder || "") + lines[0];
+    this.remainder = lines.pop();
+    lines.forEach((line) => controller.enqueue(line));
+  },
+  flush(controller) {
+    if (this.remainder) {
+      controller.enqueue(this.remainder);
+    }
+  },
+});
+```
+
+Update the reader to use this stream:
+
+```javascript
+const readableStreamClosed = port.readable.pipeTo(decoder.writable);
+const inputStream = decoder.readable.pipeThrough(lineBreakTransformer);
+const reader = inputStream.getReader();
+```
+
+The logs should now be split into lines. We can now use the `JSON.parse` function to parse the JSON string into a JavaScript object.
+
+```javascript
+// Do something with |value|...
+try {
+  const json = JSON.parse(value);
+  console.log(json);
+} catch (error) {
+  console.log(error);
+}
+```
+
+Do further json processing so that you can see the values in your browser.
+
 ## Components to test
 
 You've got a lot of different components in your kit. Build and test the following examples, try to include some logging via Serial.
