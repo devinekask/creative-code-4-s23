@@ -296,6 +296,13 @@ setInterval(async () => {
 
 **note the additional line break `\n` - do you know why we are adding this? Hint: take a look at our Arduino sketch...**
 
+- Test the app - the RGB led should change color every second.
+- Listen for the `disconnected` event on the port, and toggle the connect button visibility. Try unplugging the arduino while the app is running, to check if everything remains stable:
+  - On startup, the connect button is visible
+  - After selecting a port, the button is not visible
+  - on disconnect the button is visible again
+- Change the app, and try controlling the RGB color using a color picker or sliders. You will probably need to move the port, writableStreamClosed and writer to the global scope.
+
 ## Components to test
 
 You've got a lot of different components in your kit. Build and test the following examples, try to include some logging via Serial.
@@ -319,10 +326,9 @@ Use your imagination to combine inputs with outputs. Sound a piezzo alarm when t
 
 By using serial communication, you can combine the hardware with browser logic. Make sure to try the following projects:
 
-1. Fade an LED using an `<input type="range">`
-2. Change a servo angle based on the x position of your mouse pointer on the screen
-3. Control the background color of your `<body>` tag using a potentiometer or a light sensor
-4. Build a basic arcade game (pong, breakout) and control it using an Arduino sensor
+1. Change a servo angle based on the x position of your mouse pointer on the screen
+2. Control the background color of your `<body>` tag using a potentiometer or a light sensor
+3. Build a basic arcade game (pong, breakout) and control it using an Arduino sensor
 
 ## Other things to check
 
