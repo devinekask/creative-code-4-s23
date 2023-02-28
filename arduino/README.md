@@ -202,57 +202,121 @@ As mentioned in the docs, you can only use Web Serial within a secure browser co
 
 Next up, [follow the step-by-step article on the chrome website](https://developer.chrome.com/articles/serial/).
 
-Create an index.html file in your public folder, and setup some initial elements and code.
+Create an index.html file in your public folder, and use some boilerplate code to get started:
+- placeholder divs for the two different states of the app (supported / not supported)
+- placeholder divs for the connection status (connected / disconnected)
+- boolean to check whether the Web Serial API is supported
+- boolean to check whether the serial port is connected
+- methods to toggle the visibility of the different divs
 
 ```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arduino Web Serial</title>
+</head>
 <body>
   <div id="app">
     <div id="not-supported">
       Web Serial is not supported in this browser.
     </div>
     <div id="supported">
-      <button>Connect</button>
+      <div id="not-connected">
+        Not Connected
+      </div>
+      <div id="connected">
+        Connected
+      </div>
     </div>
   </div>
   <script type="module">
 
+    // app state
+    const hasWebSerial = "serial" in navigator;
+    let isConnected = false;
+
     const $notSupported = document.getElementById("not-supported");
     const $supported = document.getElementById("supported");
+    const $notConnected = document.getElementById("not-connected");
+    const $connected = document.getElementById("connected");
 
     const init = async () => {
-      console.log("hello world");
+      displaySupportedState();
+      if (!hasWebSerial) return;
+      displayConnectionState();
     };
+
+    const displaySupportedState = () => {
+      if (hasWebSerial) {
+        $notSupported.style.display = "none";
+        $supported.style.display = "block";
+      } else {
+        $notSupported.style.display = "block";
+        $supported.style.display = "none";
+      }
+    }
+
+    const displayConnectionState = () => {
+      if (isConnected) {
+        $notConnected.style.display = "none";
+        $connected.style.display = "block";
+      } else {
+        $notConnected.style.display = "block";
+        $connected.style.display = "none";
+      }
+    }
 
     init();
 
   </script>
 </body>
+</html>
 ```
 
-The first thing to do is to check whether the Web Serial API is supported in the current browser (at time of writing, only Chrome, Edge and Opera supported this API). To do that, check whether serial is in navigator.
+At time of writing, only Chrome, Edge and Opera supported the Web Serial API, so make sure to use one of those browsers. The early `return` in the init function will make sure that the app doesn't run in other browsers.
+
+As [seen on the MDN Web Serial API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API) page, we can get a list of available ports using the `navigator.serial.getPorts()` method, and keep track of connected ports using the `navigator.serial.addEventListener('connect')` and `navigator.serial.addEventListener('disconnect')` methods.
+
+Add the following logic to our `init()` function:
 
 ```javascript
-const hasWebSerial = "serial" in navigator;
+navigator.serial.addEventListener('connect', (e) => {
+  const port = e.target;
+  const info = port.getInfo();
+  console.log('connect', port, info);
+});
+
+navigator.serial.addEventListener('disconnect', (e) => {
+  const port = e.target;
+  const info = port.getInfo();
+  console.log('disconnect', port, info);
+});
+
+const ports = await navigator.serial.getPorts();
+
+console.log('Ports');
+ports.forEach(port => {
+  const info = port.getInfo();
+  console.log(info);
+});
 ```
 
-Use that boolean to toggle the visibility of our two support-divs:
+Run the app, with your arduino connected. We don't see any ports logged yet: this is because we need to request access to the port first, using the `navigator.serial.requestPort()` method.
 
-```javascript
-$notSupported.style.display = hasWebSerial ? "none" : "block";
-$supported.style.display = hasWebSerial ? "block" : "none";
-```
+Try adding the requestPort method at the end of the init() function, and run the app again. This doesn't work either: we get an error in our console:
 
-You can add an early return in your init() function when web serial is not supported:
-
-```javascript
-const init = async () => {
-  if (!hasWebSerial) return;
-};
-```
+> Uncaught (in promise) DOMException:
+> The requestPort() method must be called in response to a user gesture.
 
 The method `Serial.requestPort()` must be called on a user interaction. This is why we have a button on our page.
 
-Add a click event listener to the connect button, and hook up the following event handler:
+Add a button to the `not-connected` div (doing it in the html is fine, as we toggle the div visibility), and attach a click event listener to it:
+
+```javascript
+$connectButton.addEventListener("click", handleClickConnect);
+```
 
 ```javascript
 const handleClickConnect = async () => {
@@ -260,16 +324,18 @@ const handleClickConnect = async () => {
   console.log(port);
   const info = port.getInfo();
   console.log(info);
-}
+};
 ```
 
 Test the button: you should see a browser dialog askint to select a port, after selecting the port, you should see some general information.
 
 > There can be only one serial connection at a time. Remember this when you're trying to upload a new sketch while a browser is already connected to the serial port or when the Serial monitor is open in the Arduino IDE...
 
-Once we have a port, we can setup our serial connection, using the same baudRate we specified in our Arduino sketch:
+Once we have a port, we can setup our serial connection, using the same baudRate we specified in our Arduino sketch. Make sure to update the connection status boolean, and toggle the visibility of the divs:
 
 ```javascript
+isConnected = true;
+displayConnectionState();
 await port.open({ baudRate: 9600 });
 ```
 
@@ -296,11 +362,85 @@ setInterval(async () => {
 
 **note the additional line break `\n` - do you know why we are adding this? Hint: take a look at our Arduino sketch...**
 
-- Test the app - the RGB led should change color every second.
-- Listen for the `disconnected` event on the port, and toggle the connect button visibility. Try unplugging the arduino while the app is running, to check if everything remains stable:
-  - On startup, the connect button is visible
-  - After selecting a port, the button is not visible
-  - on disconnect the button is visible again
+Test the app - the RGB led should change color every second.
+
+Listen for the `disconnected` event on the port, and toggle the connect button visibility. Try unplugging the arduino while the app is running, to check if everything remains stable.
+
+```javascript
+port.addEventListener("disconnect", () => {
+  console.log("Disconnected");
+  isConnected = false;
+  displayConnectionState();
+});
+```
+
+Now that we have a port linked to our app, you'll notice that the port logging logic in the `init()` function is also triggered. We can now add some extra, auto-connect logic to our app.
+
+Move the connection logic (setting up the baudRate, stream writer and disconnect logic) to a separate connect function, and call that function from the `handleClickConnect` function:
+
+```javascript
+const handleClickConnect = async () => {
+  const port = await navigator.serial.requestPort();
+  console.log(port);
+  const info = port.getInfo();
+  console.log(info);
+  await connect(port);
+};
+
+const connect = async (port) => {
+  isConnected = true;
+  displayConnectionState();
+
+  await port.open({ baudRate: 9600 });
+
+  const textEncoder = new TextEncoderStream();
+  const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
+  const writer = textEncoder.writable.getWriter();
+  setInterval(async () => {
+    await writer.write(JSON.stringify({
+      r: Math.floor(Math.random()*255),
+      g: Math.floor(Math.random()*255),
+      b: Math.floor(Math.random()*255),
+    }));
+    await writer.write("\n");
+  }, 1000);
+
+  port.addEventListener("disconnect", () => {
+    console.log("Disconnected");
+    isConnected = false;
+    displayConnectionState();
+  });
+}
+```
+
+At the end of our init function, where we have a list of ports, we can now also call the connect function when we have a port:
+
+```javascript
+if (ports.length > 0) {
+  connect(ports[0]);
+}
+```
+
+Run the app, and check if the connection is established automatically.
+
+Let' make sure we can unplug / replug the arduino, and the app will reconnect automatically.
+
+In our connect handler, we can now call this same connect function when no connection is active yet:
+
+```javascript
+navigator.serial.addEventListener('connect', (e) => {
+  const port = e.target;
+  const info = port.getInfo();
+  console.log('connect', port, info);
+  if (!isConnected) {
+    connect(port);
+  }
+});
+```
+
+If you have multiple serial devices connected to a web page, chance exists that the app doesn't connect to the correct device. You'll have noticed that we are logging some port info (usbProductId and usbVendorId) in the console. We can use this to filter the ports we want to connect to.
+
+- Keep track of the "Arduino" ports, by using the `usbProductId` and `usbVendorId` properties.
 - Change the app, and try controlling the RGB color using a color picker or sliders. You will probably need to move the port, writableStreamClosed and writer to the global scope.
 
 ## Components to test

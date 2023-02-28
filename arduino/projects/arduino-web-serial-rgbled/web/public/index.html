@@ -4,9 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Arduino Web Serial</title>
-  <style>
-
-  </style>
 </head>
 <body>
   <div id="app">
@@ -14,24 +11,80 @@
       Web Serial is not supported in this browser.
     </div>
     <div id="supported">
-      <button id="connectButton">Connect</button>
+      <div id="not-connected">
+        <button id="connectButton">Connect</button>
+      </div>
+      <div id="connected">
+        Connected
+      </div>
     </div>
   </div>
   <script type="module">
 
+    // app state
+    const hasWebSerial = "serial" in navigator;
+    let isConnected = false;
+
     const $notSupported = document.getElementById("not-supported");
     const $supported = document.getElementById("supported");
-    
-    const hasWebSerial = "serial" in navigator;
-
-    $notSupported.style.display = hasWebSerial ? "none" : "block";
-    $supported.style.display = hasWebSerial ? "block" : "none";
+    const $notConnected = document.getElementById("not-connected");
+    const $connected = document.getElementById("connected");
 
     const $connectButton = document.getElementById("connectButton");
 
+    const arduinoInfo = {
+      usbProductId: 32823,
+      usbVendorId: 9025
+    };
+    let connectedArduinoPorts = [];
+
     const init = async () => {
+      displaySupportedState();
       if (!hasWebSerial) return;
+      displayConnectionState();
+      navigator.serial.addEventListener('connect', (e) => {
+        const port = e.target;
+        const info = port.getInfo();
+        console.log('connect', port, info);
+        if (isArduinoPort(port)) {
+          connectedArduinoPorts.push(port);
+          if (!isConnected) {
+            connect(port);
+          }
+        }
+      });
+
+      navigator.serial.addEventListener('disconnect', (e) => {
+        const port = e.target;
+        const info = port.getInfo();
+        console.log('disconnect', port, info);
+        connectedArduinoPorts = connectedArduinoPorts.filter(p => p !== port);
+      });
+
+      const ports = await navigator.serial.getPorts();
+      connectedArduinoPorts = ports.filter(isArduinoPort);
+
+      console.log('Ports');
+      ports.forEach(port => {
+        const info = port.getInfo();
+        console.log(info);
+      });
+      console.log('Connected Arduino ports');
+      connectedArduinoPorts.forEach(port => {
+        const info = port.getInfo();
+        console.log(info);
+      });
+
+      if (connectedArduinoPorts.length > 0) {
+        connect(connectedArduinoPorts[0]);
+      }
+
       $connectButton.addEventListener("click", handleClickConnect);
+    };
+
+    const isArduinoPort = (port) => {
+      const info = port.getInfo();
+      return info.usbProductId === arduinoInfo.usbProductId && info.usbVendorId === arduinoInfo.usbVendorId;
     };
 
     const handleClickConnect = async () => {
@@ -39,12 +92,12 @@
       console.log(port);
       const info = port.getInfo();
       console.log(info);
+      await connect(port);
+    };
 
-      $connectButton.style.display = "none";
-      port.addEventListener("disconnect", () => {
-        console.log("Disconnected");
-        $connectButton.style.display = "block";
-      });
+    const connect = async (port) => {
+      isConnected = true;
+      displayConnectionState();
 
       await port.open({ baudRate: 9600 });
 
@@ -59,7 +112,33 @@
         }));
         await writer.write("\n");
       }, 1000);
-    };
+
+      port.addEventListener("disconnect", () => {
+        console.log("Disconnected");
+        isConnected = false;
+        displayConnectionState();
+      });
+    }
+
+    const displaySupportedState = () => {
+      if (hasWebSerial) {
+        $notSupported.style.display = "none";
+        $supported.style.display = "block";
+      } else {
+        $notSupported.style.display = "block";
+        $supported.style.display = "none";
+      }
+    }
+
+    const displayConnectionState = () => {
+      if (isConnected) {
+        $notConnected.style.display = "none";
+        $connected.style.display = "block";
+      } else {
+        $notConnected.style.display = "block";
+        $connected.style.display = "none";
+      }
+    }
 
     init();
 
