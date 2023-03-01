@@ -104,7 +104,11 @@
       const textEncoder = new TextEncoderStream();
       const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
       const writer = textEncoder.writable.getWriter();
-      setInterval(async () => {
+      const intervalId = setInterval(async () => {
+        if (!isConnected) {
+          clearInterval(intervalId);
+          return;
+        }
         await writer.write(JSON.stringify({
           r: Math.floor(Math.random()*255),
           g: Math.floor(Math.random()*255),
