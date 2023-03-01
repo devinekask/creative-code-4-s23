@@ -327,7 +327,7 @@ const handleClickConnect = async () => {
 };
 ```
 
-Test the button: you should see a browser dialog askint to select a port, after selecting the port, you should see some general information.
+Test the button: you should see a browser dialog to select a port, after selecting the port, you should see some general information.
 
 > There can be only one serial connection at a time. Remember this when you're trying to upload a new sketch while a browser is already connected to the serial port or when the Serial monitor is open in the Arduino IDE...
 
