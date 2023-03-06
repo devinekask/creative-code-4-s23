@@ -423,7 +423,7 @@ if (ports.length > 0) {
 
 Run the app, and check if the connection is established automatically.
 
-Let' make sure we can unplug / replug the arduino, and the app will reconnect automatically.
+Let's make sure we can unplug / replug the arduino, and the app will reconnect automatically.
 
 In our connect handler, we can now call this same connect function when no connection is active yet:
 
