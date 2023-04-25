@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hello World!</title>
+
+  </head>
+  <body>
+    <div id="app">
+      <div id="not-supported">
+        Web Serial is not supported in this browser.
+      </div>
+      <div id="supported">
+        <div id="not-connected">
+          <button id="connectButton">Connect</button>
+        </div>
+        <div id="connected">
+          <div>Connected</div>
+          <input type="range" min="0" max="255" value="0" id="r">
+          <input type="range" min="0" max="255" value="0" id="g">
+          <input type="range" min="0" max="255" value="0" id="b">
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/renderer.js"></script>
+  </body>
+</html>
